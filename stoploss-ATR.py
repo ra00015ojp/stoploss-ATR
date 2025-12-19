@@ -19,10 +19,7 @@ def fetch_ticker_data(ticker, period='6mo'):
     """Fetch and cache ticker data to avoid rate limiting."""
     try:
         time.sleep(0.5)  # Small delay between requests
-        # Set user agent to avoid some rate limiting
-        yf.pdr_override()
-        data = yf.download(ticker, period=period, progress=False, show_errors=False, 
-                          headers={'User-Agent': 'Mozilla/5.0'})
+        data = yf.download(ticker, period=period, progress=False)
         return data
     except Exception as e:
         st.warning(f"Could not fetch {ticker}: {str(e)}")
@@ -115,6 +112,8 @@ if st.sidebar.button("Reset to Defaults"):
 
 # Main content
 st.header("Analysis Results")
+
+st.info("⚠️ **Note**: Click the button below to fetch live data. Data is cached for 1 hour to avoid rate limits.")
 
 if st.button("🔄 Calculate ATR Trailing Stops", type="primary"):
     with st.spinner("Fetching data and calculating..."):

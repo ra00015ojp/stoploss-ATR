@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import warnings
+import time
 
 warnings.filterwarnings("ignore")
 
@@ -13,10 +14,24 @@ st.set_page_config(
     layout="wide"
 )
 
+@st.cache_data(ttl=3600)  # Cache for 1 hour
+def fetch_ticker_data(ticker, period='6mo'):
+    """Fetch and cache ticker data to avoid rate limiting."""
+    try:
+        time.sleep(0.5)  # Small delay between requests
+        # Set user agent to avoid some rate limiting
+        yf.pdr_override()
+        data = yf.download(ticker, period=period, progress=False, show_errors=False, 
+                          headers={'User-Agent': 'Mozilla/5.0'})
+        return data
+    except Exception as e:
+        st.warning(f"Could not fetch {ticker}: {str(e)}")
+        return pd.DataFrame()
+
 def calculate_atr_trailing_stop(ticker, multiplier, period):
     """Calculate ATR-based trailing stop loss for a given ticker."""
     try:
-        data = yf.download(ticker, period='1y', progress=False)
+        data = fetch_ticker_data(ticker, period='6mo')
         
         if data.empty:
             return None
@@ -113,6 +128,7 @@ if st.button("🔄 Calculate ATR Trailing Stops", type="primary"):
                 result['Ticker'] = ticker
                 results.append(result)
             progress_bar.progress((idx + 1) / len(st.session_state.tickers))
+            time.sleep(0.3)  # Add delay between tickers
         
         progress_bar.empty()
         
